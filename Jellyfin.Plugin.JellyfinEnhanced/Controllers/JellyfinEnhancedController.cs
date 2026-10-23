@@ -1,48 +1,49 @@
+using Jellyfin.Data;
+using Jellyfin.Data.Enums;
+using Jellyfin.Database.Implementations;
+using Jellyfin.Database.Implementations.Enums;
+using Jellyfin.Plugin.JellyfinEnhanced.Configuration;
+using Jellyfin.Plugin.JellyfinEnhanced.Extensions;
+using Jellyfin.Plugin.JellyfinEnhanced.Helpers;
+using Jellyfin.Plugin.JellyfinEnhanced.Helpers.Jellyseerr;
+using Jellyfin.Plugin.JellyfinEnhanced.Model.Arr;
+using Jellyfin.Plugin.JellyfinEnhanced.Model.Jellyseerr;
+using Jellyfin.Plugin.JellyfinEnhanced.Services.PosterTags;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Common.Net;
+using MediaBrowser.Common.Plugins;
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Configuration;
+using MediaBrowser.Controller.Dto;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Persistence;
+using MediaBrowser.Model;
+using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Plugins;
+using MediaBrowser.Model.Querying;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using Jellyfin.Data;
-using Jellyfin.Data.Enums;
-using MediaBrowser.Controller.Dto;
-using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Dto;
-using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Querying;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.StaticFiles;
-using Newtonsoft.Json.Linq;
-using Jellyfin.Plugin.JellyfinEnhanced.Configuration;
-using Jellyfin.Plugin.JellyfinEnhanced.Services.PosterTags;
-using MediaBrowser.Controller;
-using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Common.Net;
-using MediaBrowser.Common.Plugins;
-using Jellyfin.Plugin.JellyfinEnhanced.Helpers;
-using Jellyfin.Plugin.JellyfinEnhanced.Model.Jellyseerr;
-using Jellyfin.Plugin.JellyfinEnhanced.Helpers.Jellyseerr;
-using MediaBrowser.Model.Plugins;
-using MediaBrowser.Model;
-using MediaBrowser.Controller.Persistence;
-using Jellyfin.Plugin.JellyfinEnhanced.Model.Arr;
-using Jellyfin.Plugin.JellyfinEnhanced.Extensions;
-using Jellyfin.Database.Implementations;
-using Jellyfin.Database.Implementations.Enums;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
 {
@@ -81,6 +82,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
         private readonly Services.SpoilerExistingTitlesApplier _spoilerExistingApplier;
         private readonly MediaBrowser.Model.Tasks.ITaskManager _taskManager;
         private readonly IPluginManager _pluginManager;
+        private readonly IApplicationPaths _paths;
 
         // Server-side cache for proxied avatar images to avoid re-fetching from
         // upstream Seerr on every request. Entries expire after 1 hour.
@@ -218,7 +220,8 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
             INetworkManager networkManager,
             Services.SpoilerExistingTitlesApplier spoilerExistingApplier,
             MediaBrowser.Model.Tasks.ITaskManager taskManager,
-            IPluginManager pluginManager)
+            IPluginManager pluginManager,
+            IApplicationPaths applicationPaths)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
@@ -251,6 +254,7 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
             _spoilerExistingApplier = spoilerExistingApplier;
             _taskManager = taskManager;
             _pluginManager = pluginManager;
+            _paths = applicationPaths;
         }
 
         /// <summary>
@@ -12335,6 +12339,28 @@ namespace Jellyfin.Plugin.JellyfinEnhanced.Controllers
             }
 
             return File(stream, MimeTypes.GetMimeType(view.EmbeddedResourcePath));
+        }
+
+        [HttpGet("jellyseerr/request/profile-overrides")]
+        [Authorize]
+        public async Task<IActionResult> GetJellyseerrRequestsProfileOverrides()
+        {
+            var pluginFolder = Path.Combine(
+                _paths.PluginConfigurationsPath,
+                "Jellyfin.Plugin.JellyfinEnhanced"  // TODO: dynamic
+            );
+
+            Directory.CreateDirectory(pluginFolder);
+
+            var path = Path.Combine(pluginFolder, "profile-overrides.json");
+
+            string json = "";
+            if (System.IO.File.Exists(path))
+            {
+                json = System.IO.File.ReadAllText(path);
+            }
+
+            return Content(json, "application/json");
         }
     }
     public class TmdbPersonData

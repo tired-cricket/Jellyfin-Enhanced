@@ -312,8 +312,29 @@
      *   server whose `is4k` matches is auto-selected -- Seerr flags one regular
      *   AND one 4K instance as `isDefault: true` each, so without this the last
      *   `isDefault` instance processed always wins regardless of request mode.
+     * @param {object} item - The media to be requested.
+     * @param {object} currentUser - Users preferences that can be used to override default values.
      */
-    modal.populateAdvancedOptions = function(modalElement, data, idPrefix, is4k) {
+    modal.populateAdvancedOptions = function(modalElement, data, idPrefix, is4k, currentUser, item, profileOverrides) {
+        function getOverride(attr) {
+            for (let i = 0; i < profileOverrides.length; i++) {
+                const profile = profileOverrides[i];
+
+                const value = profile[attr];
+                if (typeof (value) !== "string") {
+                    continue;
+                }
+
+                // TODO: check value's validity (i.e. it exists on this server's data)
+
+                if (profile.rule(currentUser, idPrefix, item) === true) {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
         // Use a timer to ensure emby-select elements are ready
         let attempts = 0;
         const maxAttempts = 50; // 5 seconds
@@ -329,6 +350,10 @@
                 qualitySelect.innerHTML = '<option value="">Select Quality...</option>';
                 folderSelect.innerHTML = '<option value="">Select Folder...</option>';
 
+                const serverOverride = getOverride("server");
+                const qualityOverride = getOverride("qualityProfile");
+                const folderOverride = getOverride("rootFolder");
+
                 // Seerr returns instances in its own internal order (e.g. 4K
                 // instance first) -- sort alphabetically by name so the list is
                 // predictable regardless of how Seerr ordered them.
@@ -339,7 +364,8 @@
                     const option = document.createElement('option');
                     option.value = server.id;
                     option.textContent = server.name || `Server ${server.id}`;
-                    if (server.isDefault && (is4k === undefined || !!server.is4k === !!is4k)) {
+                    if (server.name === serverOverride ||
+                        (serverOverride === null && server.isDefault && (is4k === undefined || !!server.is4k === !!is4k))) {
                         option.selected = true;
                     }
                     serverSelect.appendChild(option);
@@ -355,14 +381,18 @@
                         const option = document.createElement('option');
                         option.value = profile.id;
                         option.textContent = profile.name || `Profile ${profile.id}`;
-                        if (profile.id === selectedServer.activeProfileId) option.selected = true;
+                        if (profile.name === qualityOverride || (profile.id === selectedServer.activeProfileId && qualityOverride === null)) {
+                            option.selected = true;
+                        }
                         qualitySelect.appendChild(option);
                     });
                     selectedServer.rootFolders.forEach(folder => {
                         const option = document.createElement('option');
                         option.value = folder.path;
                         option.textContent = formatFolderLabel(folder);
-                        if (folder.path === selectedServer.activeDirectory) option.selected = true;
+                        if (folder.path === folderOverride || (folderOverride === null && folder.path === selectedServer.activeDirectory)) {
+                            option.selected = true;
+                        }
                         folderSelect.appendChild(option);
                     });
                 }

@@ -796,6 +796,22 @@
         }
     };
 
+    api.fetchRequestProfileOverrideData = async function () {
+        try {
+            const requestProfileOverrideData = await get('/request/profile-overrides');
+            if (!Array.isArray(requestProfileOverrideData)) {
+                return [];
+            }
+            for (let i = 0; i < requestProfileOverrideData.length; i++) {
+                const profile = requestProfileOverrideData[i];
+                profile.rule = eval(profile.rule);
+            }
+            return requestProfileOverrideData;
+        } catch (error) {
+            return [];
+        }
+    }
+
 
     // Returns { movie, tv } quota with nextResetAt, or null when disabled / on failure.
     api.fetchUserQuota = async function(options = {}) {

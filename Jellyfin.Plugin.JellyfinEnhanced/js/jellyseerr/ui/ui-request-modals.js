@@ -21,7 +21,7 @@
      */
     ui.showMovieRequestModal = async function(tmdbId, title, searchResultItem, is4k = false) {
         const { create, createAdvancedOptionsHTML, populateAdvancedOptions } = JE.jellyseerrModal;
-        const { requestMedia, fetchAdvancedRequestData, fetchUserQuota } = JE.jellyseerrAPI;
+        const { requestMedia, fetchAdvancedRequestData, fetchRequestProfileOverrideData, fetchUserQuota } = JE.jellyseerrAPI;
 
         const bodyHtml = createAdvancedOptionsHTML('movie');
         const { modalElement, show } = create({
@@ -73,7 +73,9 @@
 
         try {
             const data = await fetchAdvancedRequestData('movie');
-            populateAdvancedOptions(modalElement, data, 'movie', is4k);
+            const profileOverrideData = await fetchRequestProfileOverrideData();
+            const currentUser = await ApiClient.getCurrentUser();
+            populateAdvancedOptions(modalElement, data, 'movie', is4k, currentUser, searchResultItem, profileOverrideData);
         } catch (error) {
             console.error(`${logPrefix} Failed to load advanced options:`, error);
             JE.toast(JE.t('jellyseerr_err_load_server_options'), 3000);
@@ -90,7 +92,7 @@
      */
     ui.showCollectionRequestModal = async function(collectionId, collectionName, searchResultItem = null) {
         const { create, createAdvancedOptionsHTML, populateAdvancedOptions } = JE.jellyseerrModal;
-        const { fetchCollectionDetails, requestMedia, fetchAdvancedRequestData } = JE.jellyseerrAPI;
+        const { fetchCollectionDetails, requestMedia, fetchAdvancedRequestData, fetchRequestProfileOverrideData } = JE.jellyseerrAPI;
 
         // Fetch collection details
         let collectionDetails;
@@ -162,6 +164,7 @@
         }).join('');
 
         const bodyHtml = `
+            ${showAdvanced ? createAdvancedOptionsHTML('movie') : ''}
             <div class="jellyseerr-collection-list" style="max-height: 600px; overflow-y: auto;">
                 <div class="jellyseerr-collection-header-row">
                     <input type="checkbox" class="jellyseerr-collection-checkbox" id="jellyseerr-select-all-movies">
@@ -171,7 +174,6 @@
                 </div>
                 ${movieListHtml}
             </div>
-            ${showAdvanced ? createAdvancedOptionsHTML('movie') : ''}
         `;
 
         const modalInstance = create({
@@ -262,7 +264,9 @@
         if (showAdvanced) {
             try {
                 const advancedData = await fetchAdvancedRequestData('movie');
-                populateAdvancedOptions(modalInstance.modalElement, advancedData, 'movie', false);
+                const profileOverrideData = await fetchRequestProfileOverrideData();
+                const currentUser = await ApiClient.getCurrentUser();
+                populateAdvancedOptions(modalInstance.modalElement, advancedData, 'movie', false, currentUser, searchResultItem, profileOverrideData);
             } catch (error) {
                 console.error('Failed to load advanced options:', error);
             }

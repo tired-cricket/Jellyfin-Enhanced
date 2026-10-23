@@ -322,7 +322,7 @@
             .jellyseerr-season-title { position: relative; font-size: 0.92rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.4rem; color: #8b9bff; text-shadow: 0 0 14px rgba(99, 102, 241, 0.55); }
             .jellyseerr-season-subtitle { position: relative; font-size: 1.65rem; line-height: 1.15; color: #fff; font-weight: 700; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
             .jellyseerr-modal-body { padding: 24px; overflow-y: auto; }
-            .jellyseerr-advanced-options { margin-top: 1.25em; padding-top: 1.1em; border-top: 1px solid rgba(148, 163, 184, 0.14); }
+            .jellyseerr-advanced-options { margin-bottom: 2em; padding-bottom: 1.1em; border-bottom: 1px solid rgba(148, 163, 184, 0.14); }
             .jellyseerr-advanced-options h3 { margin: 0 0 0.9rem; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; }
             .jellyseerr-form-row { display: flex; gap: 1em; margin-bottom: 1em; }
             .jellyseerr-advanced-options .jellyseerr-form-row { gap: 14px; margin-bottom: 14px; }

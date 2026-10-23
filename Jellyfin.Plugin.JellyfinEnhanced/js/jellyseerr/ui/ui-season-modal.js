@@ -28,7 +28,7 @@
 
 
         const { create, createAdvancedOptionsHTML, populateAdvancedOptions } = JE.jellyseerrModal;
-        const { fetchTvShowDetails, fetchTvSeasonDetails, fetchTmdbTvDetails, requestTvSeasons, fetchAdvancedRequestData, fetchRequestSettings, requestMedia, fetchSonarrLookup } = JE.jellyseerrAPI;
+        const { fetchTvShowDetails, fetchTvSeasonDetails, fetchTmdbTvDetails, requestTvSeasons, fetchAdvancedRequestData, fetchRequestProfileOverrideData, fetchRequestSettings, requestMedia, fetchSonarrLookup } = JE.jellyseerrAPI;
 
         // Fetch Seerr request settings (partial requests + special episodes)
         let partialRequestsEnabled = false;
@@ -108,9 +108,9 @@
         const needsTvdbMatch = !tvDetails.externalIds?.tvdbId && !storedTvdbId;
 
         // Show season selection UI with Select All checkbox header
-        const bodyHtml = `${needsTvdbMatch ? buildTvdbMatchHTML() : ''}<div class="jellyseerr-season-list">
+        const bodyHtml = `${showAdvanced ? createAdvancedOptionsHTML('tv') : ''}${needsTvdbMatch ? buildTvdbMatchHTML() : ''}<div class="jellyseerr-season-list">
             ${partialRequestsEnabled && !singleSeasonOnly ? '<div class="jellyseerr-season-header-row"><input type="checkbox" class="jellyseerr-season-checkbox" id="jellyseerr-select-all-seasons"><label class="jellyseerr-season-header-label" for="jellyseerr-select-all-seasons">' + JE.t('jellyseerr_select_all_seasons') + '</label><div></div><div></div></div>' : ''}
-        </div>${showAdvanced ? createAdvancedOptionsHTML('tv') : ''}`;
+        </div>`;
         const modalInstance = create({
             title: is4k ? `${JE.t('jellyseerr_modal_title')} - 4K` : JE.t('jellyseerr_modal_title'),
             subtitle: resolvedShowTitle,
@@ -350,7 +350,9 @@
         if (showAdvanced) {
             try {
                 const data = await fetchAdvancedRequestData('tv');
-                populateAdvancedOptions(modalInstance.modalElement, data, 'tv', is4k);
+                const profileOverrideData = await fetchRequestProfileOverrideData();
+                const currentUser = await ApiClient.getCurrentUser();
+                populateAdvancedOptions(modalInstance.modalElement, data, 'tv', is4k, currentUser, searchResultItem, profileOverrideData);
             } catch (error) {
                 console.error(`${logPrefix} Failed to load TV advanced options:`, error);
                 JE.toast(JE.t('jellyseerr_err_load_server_options'), 3000);
