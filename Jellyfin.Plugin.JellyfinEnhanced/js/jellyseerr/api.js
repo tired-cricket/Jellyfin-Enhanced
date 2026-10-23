@@ -283,7 +283,7 @@
     api.search = async function(query, page = 1, options = {}) {
         const { skipCache = false, signal, throwOnError = false } = options;
         try {
-            const lang = (navigator.language || 'en').split('-')[0];
+            const lang = (document.documentElement.lang || navigator.language.split('-')[0] || 'en');
             const data = await get(`/search?query=${encodeURIComponent(query)}&page=${page}&language=${lang}`, { skipCache, signal });
 
             // Filter out people results before returning (immutable — don't mutate cached response)
